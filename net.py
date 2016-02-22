@@ -12,23 +12,27 @@ ys = []
 
 # Read image into numpy array
 for i, folder in enumerate(sorted(os.listdir('genres_png'))):
-  for f in os.listdir('genres_png/%s' % folder)[:10]:
+  for f in os.listdir('genres_png/%s' % folder):
     img = misc.imread('genres_png/%s/%s' % (folder, f), flatten=True)
-    img_split = np.split(img, [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500], axis=1)
-    img_split2 = [x.reshape(500 * 100) for x in img_split[:8]]
+    img_split = np.split(img, [512, 1024, 1536, 2048, 2560, 3072, 3584, 4096, 4608], axis=1)
+    # if f == 'classical.00051.png' or f == 'country.00007.png' or 'disco.00014.png':
+    img_split2 = [x.reshape(512 * 100) for x in img_split[:8]]
+    # else:
+      # img_split2 = [x.reshape(500 * 100) for x in img_split[:9]]
 
     xs.extend(img_split2)
     print 'added %s ' % f
 
-    for _ in xrange(9):
+    for _ in xrange(len(img_split2)):
       new_array = [0] * 10
       new_array[i] = 1
       ys.append(new_array)
 
 
+
 # Height and width of input
 height = 100  # number of frequency bins
-width = 500  # number of frames (150 frames in one second)
+width = 512  # number of frames (150 frames in one second)
 
 # Number of genres
 num_genres = 10
@@ -70,10 +74,10 @@ b_conv2 = bias_variable([num_features2])
 h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 h_pool2 = max_pool_2x2(h_conv2)
 
-W_fc1 = weight_variable([width / 16 * num_features2, 2048])
+W_fc1 = weight_variable([width / 16 * 100 * num_features2, 2048])
 b_fc1 = bias_variable([2048])
 
-h_pool2_flat = tf.reshape(h_pool2, [-1, width / 16 * num_features2])
+h_pool2_flat = tf.reshape(h_pool2, [-1, width / 16 * 100 * num_features2])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 keep_prob = tf.placeholder(tf.float32)
@@ -94,20 +98,19 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 with tf.Session() as sess:
   sess.run(tf.initialize_all_variables())
-  for i in range(20000):
-    random_indices = random.sample(xrange(len(xs)), 50)
+  for i in range(5000):
+    random_indices = random.sample(xrange(len(xs)), 25)
     batch_xs = [xs[index] for index in random_indices]
     batch_ys = [ys[index] for index in random_indices]
     if i % 100 == 0:
+      print 'calculating training accuracy'
       train_accuracy = accuracy.eval(feed_dict={
           x:batch_xs, y_: batch_ys, keep_prob: 1.0})
       print "step %d, training accuracy %g"%(i, train_accuracy)
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
-    if i % 1000 == 0:
+    if i % 500 == 0:
       save_path = saver.save(sess, 'model.ckpt')
-    if i % 5000 == 0:
+    if i % 1000 == 0:
       save_path = saver.save(sess, 'model%s.ckpt' % str(i))
 
-  print("test accuracy %g"%accuracy.eval(feed_dict={
-      x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
 
