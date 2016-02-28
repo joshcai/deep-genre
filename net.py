@@ -7,6 +7,9 @@ import numpy as np
 
 import tensorflow as tf
 
+import smtplib
+from email.mime.text import MIMEText
+
 xs = []
 ys = []
 
@@ -108,6 +111,7 @@ with tf.Session() as sess:
       print 'calculating training accuracy'
       train_accuracy = accuracy.eval(feed_dict={
           x:batch_xs, y_: batch_ys, keep_prob: 1.0})
+      sendEmail(i, train_accuracy)
       print "step %d, training accuracy %g"%(i, train_accuracy)
       save_path = saver.save(sess, './model.ckpt')
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
@@ -115,3 +119,15 @@ with tf.Session() as sess:
       save_path = saver.save(sess, './model%s.ckpt' % str(i))
 
 
+def sendEmail(step, train_accuracy)
+    from = 'vivienhngo@gmail.com'
+    to = ['vivienhngo@gmail.com']
+
+    msg = MIMEText("step %d, training accuracy %g"%(step, train_accuracy))
+    msg['Subject'] = 'Finished experiment'
+    msg['From'] = from
+    msg['To'] = COMMASPACE.join(to)
+
+    s = smtplib.SMTP('localhost')
+    s.sendmail(from, to, msg.as_string())
+    s.quit()
