@@ -63,7 +63,7 @@ def conv2d(x, W):
   return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 def avg_pool_1x4(x):
-  return tf.nn.avg_pool(x, ksize=[1, 1, 4, 1],
+  return tf.nn.avg_pool(x, ksize=[1, 4, 4, 1],
                         strides=[1, 1, 4, 1], padding='SAME')
 
 num_features1 = 64
@@ -84,10 +84,18 @@ b_conv2 = bias_variable([num_features2])
 h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 h_pool2 = avg_pool_1x4(h_conv2)
 
-W_fc1 = weight_variable([width / 16 * 100 * num_features2, 512])
+num_features3 = 32
+
+W_conv3 = weight_variable([height, 4, num_features2, num_features3])
+b_conv3 = bias_variable([num_features3])
+
+h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
+h_pool3 = avg_pool_1x4(h_conv3)
+
+W_fc1 = weight_variable([width / 64 * 100 * num_features3, 512])
 b_fc1 = bias_variable([512])
 
-h_pool2_flat = tf.reshape(h_pool2, [-1, width / 16 * 100 * num_features2])
+h_pool2_flat = tf.reshape(h_pool3, [-1, width / 64 * 100 * num_features3])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 keep_prob = tf.placeholder(tf.float32)
