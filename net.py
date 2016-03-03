@@ -21,12 +21,12 @@ validation_ys = []
 
 # Read image into numpy array
 for i, folder in enumerate(sorted(os.listdir('genres_png'))):
-  for i, f in enumerate(os.listdir('genres_png/%s' % folder)):
+  for j, f in enumerate(os.listdir('genres_png/%s' % folder)):
     img = misc.imread('genres_png/%s/%s' % (folder, f), flatten=True)
     img_split = np.split(img, [512, 1024, 1536, 2048, 2560, 3072, 3584, 4096, 4608], axis=1)
     img_split2 = [x.reshape(512 * 100) for x in img_split[:8]]
 
-    if i == 99:
+    if j == 99:
       validation_xs.extend(img_split2)
     else:
       xs.extend(img_split2)
@@ -34,7 +34,7 @@ for i, folder in enumerate(sorted(os.listdir('genres_png'))):
     for _ in xrange(len(img_split2)):
       new_array = [0] * 10
       new_array[i] = 1
-      if i == 99:
+      if j == 99:
         validation_ys.append(new_array)
       else:
         ys.append(new_array)
