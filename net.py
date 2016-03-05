@@ -14,7 +14,6 @@ from email.mime.text import MIMEText
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_saved', help='Continue from saved checkpoint')
 args = parser.parse_args()
->>>>>>> master
 
 xs = []
 ys = []
@@ -128,12 +127,8 @@ with tf.Session() as sess:
     if i % 200 == 0:
       print 'calculating training accuracy'
       train_accuracy = accuracy.eval(feed_dict={
-<<<<<<< HEAD
-          x:batch_xs, y_: batch_ys, keep_prob: 1.0})
-      sendEmail(i, train_accuracy)
-=======
           x: validation_xs, y_: validation_ys, keep_prob: 1.0})
->>>>>>> master
+      sendEmail(i, train_accuracy)
       print "step %d, training accuracy %g"%(i, train_accuracy)
       save_path = saver.save(sess, './model.ckpt')
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
