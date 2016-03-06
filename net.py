@@ -136,15 +136,15 @@ with tf.Session() as sess:
       save_path = saver.save(sess, './model%s.ckpt' % str(i))
 
 
-def sendEmail(step, train_accuracy)
-    from = 'vivienhngo@gmail.com'
+def sendEmail(step, train_accuracy):
+    sender = 'vivienhngo@gmail.com'
     to = ['vivienhngo@gmail.com']
 
     msg = MIMEText("step %d, training accuracy %g"%(step, train_accuracy))
     msg['Subject'] = 'Finished experiment'
-    msg['From'] = from
+    msg['From'] = sender
     msg['To'] = COMMASPACE.join(to)
 
     s = smtplib.SMTP('localhost')
-    s.sendmail(from, to, msg.as_string())
+    s.sendmail(sender, to, msg.as_string())
     s.quit()
