@@ -98,20 +98,25 @@ b_fc1 = bias_variable([512])
 h_pool2_flat = tf.reshape(h_pool3, [-1, width / 64 * 100 * num_features3])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
+W_fc2 = weight_variable([512, 512])
+b_fc2 = bias_variable([512])
+
+h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
+
 keep_prob = tf.placeholder(tf.float32)
-h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
 
-W_fc2 = weight_variable([512, 10])
-b_fc2 = bias_variable([10])
+W_fc3 = weight_variable([512, 10])
+b_fc3 = bias_variable([10])
 
-y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+y_conv=tf.nn.softmax(tf.matmul(h_fc2_drop, W_fc3) + b_fc3)
 
 
 saver = tf.train.Saver()
 
 cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
 global_step = tf.Variable(0, trainable=False)
-starter_learning_rate = .5
+starter_learning_rate = .01
 learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                            1000, 0.96, staircase=True)
 train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy, global_step=global_step)
@@ -127,7 +132,7 @@ with tf.Session() as sess:
   for i in range(5000):
     if i % 25 == 0:
       print('%s, ' % str(i))
-    random_indices = random.sample(xrange(len(xs)), 25)
+    random_indices = random.sample(xrange(len(xs)), 15)
     batch_xs = [xs[index] for index in random_indices]
     batch_ys = [ys[index] for index in random_indices]
     if i % 200 == 0:
