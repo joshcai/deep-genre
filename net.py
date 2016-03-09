@@ -20,7 +20,7 @@ validation_xs = []
 validation_ys = []
 
 # Read image into numpy array
-for i, folder in enumerate(sorted(os.listdir('genres_png'))):
+for i, folder in enumerate(sorted(['classical', 'hiphop'])):
   for j, f in enumerate(os.listdir('genres_png/%s' % folder)):
     img = misc.imread('genres_png/%s/%s' % (folder, f), flatten=True)
     img_split = np.split(img, [512, 1024, 1536, 2048, 2560, 3072, 3584, 4096, 4608], axis=1)
@@ -131,5 +131,3 @@ with tf.Session() as sess:
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
     if i % 1000 == 0:
       save_path = saver.save(sess, './model%s.ckpt' % str(i))
-
-
