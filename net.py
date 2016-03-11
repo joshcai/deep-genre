@@ -19,6 +19,9 @@ ys = []
 validation_xs = []
 validation_ys = []
 
+# Number of genres
+num_genres = 2
+
 # Read image into numpy array
 for i, folder in enumerate(sorted(['classical', 'hiphop'])):
   for j, f in enumerate(os.listdir('genres_png/%s' % folder)):
@@ -32,7 +35,7 @@ for i, folder in enumerate(sorted(['classical', 'hiphop'])):
       xs.extend(img_split2)
 
     for _ in xrange(len(img_split2)):
-      new_array = [0] * 10
+      new_array = [0] * num_genres
       new_array[i] = 1
       if j == 99:
         validation_ys.append(new_array)
@@ -43,9 +46,6 @@ for i, folder in enumerate(sorted(['classical', 'hiphop'])):
 # Height and width of input
 height = 100  # number of frequency bins
 width = 512  # number of frames (150 frames in one second)
-
-# Number of genres
-num_genres = 10
 
 x = tf.placeholder('float', [None, height * width])
 y_ = tf.placeholder('float', [None, num_genres])
@@ -93,8 +93,8 @@ h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 keep_prob = tf.placeholder(tf.float32)
 h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-W_fc2 = weight_variable([512, 10])
-b_fc2 = bias_variable([10])
+W_fc2 = weight_variable([512, num_genres])
+b_fc2 = bias_variable([num_genre])
 
 y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
