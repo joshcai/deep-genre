@@ -9,8 +9,11 @@ import numpy as np
 import tensorflow as tf
 
 
+import Image
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_saved', help='Continue from saved checkpoint')
+parser.add_argument('--recontruct', help='Try to reconstruct song')
 args = parser.parse_args()
 
 xs = []
@@ -46,7 +49,6 @@ for i, folder in enumerate(['classical', 'hiphop']):
 # Height and width of input
 height = 100  # number of frequency bins
 width = 512  # number of frames (150 frames in one second)
-
 
 x = tf.placeholder('float', [None, height * width])
 y_ = tf.placeholder('float', [None, num_genres])
@@ -127,27 +129,57 @@ correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
-with tf.Session() as sess:
-  if args.use_saved:
+if args.reconstruct:
+  g = tf.Graph()
+  content = xs[0]
+  shape = (1,) + content.shape
+  with g.as_default(), tf.Session() as sess:
     saver.restore(sess, 'model.ckpt')
-  else:
+    content_features = h_conv1.eval(feed_dict={x: [content]})
+
+    shape = [height * width]
+    noise = np.random.normal(size=shape, scale=np.std(content) * 0.1)
+    initial = tf.random_normal(shape) * 0.256
+    image = tf.Variable(initial)
+
+    content_loss = (2 * tf.nn.l2_loss(
+            h_conv1.eval(feed_dict={x: [image]}) - content_features) /
+            content_features.size)
+    train_step = tf.train.AdamOptimizer(.001).minimize(content_loss)
     sess.run(tf.initialize_all_variables())
-  for i in range(100000):
-    if i % 25 == 0:
-      print('%s, ' % str(i))
-    random_indices = random.sample(xrange(len(xs)), 20)
-    batch_xs = [xs[index] for index in random_indices]
-    batch_ys = [ys[index] for index in random_indices]
-    if i % 1000 == 0:
-      train_accuracy = accuracy.eval(feed_dict={
-          x: batch_xs, y_: batch_ys, keep_prob: 1.0})
-      print "step %d, training accuracy %g"%(i, train_accuracy)
-      save_path = saver.save(sess, './model.ckpt')
-    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
-    if i % 5000 == 0:
-      train_accuracy = accuracy.eval(feed_dict={
-          x: validation_xs, y_: validation_ys, keep_prob: 1.0})
-      save_path = saver.save(sess, './model%s.ckpt' % str(i))
-      print "step %d, validation accuracy %g"%(i, train_accuracy)
+    for i in range(2000):
+      last_step = (i == iterations - 1)
+
+      if i % 100 == 0 or last_step:
+        print('loss at step %s: %s' % (str(i), str(content_loss.eval())))
+      train_step.run()
+
+      if i % 500 == 0 or last_step:
+        im = Image.fromarray(image.eval()[0])
+        im.save('generated%s.png' % str(i))
+else:
+  with tf.Session() as sess:
+    if args.use_saved:
+      saver.restore(sess, 'model.ckpt')
+    else:
+      sess.run(tf.initialize_all_variables())
+    for i in range(100000):
+      if i % 25 == 0:
+        print('%s, ' % str(i))
+      random_indices = random.sample(xrange(len(xs)), 20)
+      batch_xs = [xs[index] for index in random_indices]
+      batch_ys = [ys[index] for index in random_indices]
+      if i % 1000 == 0:
+        train_accuracy = accuracy.eval(feed_dict={
+            x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+        print "step %d, training accuracy %g"%(i, train_accuracy)
+        save_path = saver.save(sess, './model.ckpt')
+      sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
+      if i % 5000 == 0:
+        train_accuracy = accuracy.eval(feed_dict={
+            x: validation_xs, y_: validation_ys, keep_prob: 1.0})
+        save_path = saver.save(sess, './model%s.ckpt' % str(i))
+        print "step %d, validation accuracy %g"%(i, train_accuracy)
+
 
 
