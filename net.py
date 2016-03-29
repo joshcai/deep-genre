@@ -130,29 +130,31 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
 if args.reconstruct:
-  g = tf.Graph()
   content = xs[0]
-  shape = (1,) + content.shape
-  with g.as_default(), tf.Session() as sess:
+
+  with tf.Session() as sess:
     saver.restore(sess, 'model.ckpt')
     content_features = h_conv1.eval(feed_dict={x: [content]})
-
-    shape = [height * width]
+    shape = (1,) + content.shape
     noise = np.random.normal(size=shape, scale=np.std(content) * 0.1)
     initial = tf.random_normal(shape) * 0.256
     image = tf.Variable(initial)
 
+    conv = tf.nn.conv2d(image, W_conv1, strides=(1, 1, 1, 1),
+            padding='SAME')
+    conv2 = tf.nn.bias_add(conv, b_conv1)
+    image_features = tf.nn.relu(conv2)
     content_loss = (2 * tf.nn.l2_loss(
-            h_conv1.eval(feed_dict={x: [image]}) - content_features) /
+            image_features - content_features) /
             content_features.size)
-    train_step = tf.train.AdamOptimizer(.001).minimize(content_loss)
-    sess.run(tf.initialize_all_variables())
+    train_step2 = tf.train.AdamOptimizer(.001).minimize(content_loss)
+    sess.run(image.initializer)
     for i in range(2000):
       last_step = (i == iterations - 1)
 
       if i % 100 == 0 or last_step:
         print('loss at step %s: %s' % (str(i), str(content_loss.eval())))
-      train_step.run()
+      train_step2.run()
 
       if i % 500 == 0 or last_step:
         im = Image.fromarray(image.eval()[0])
