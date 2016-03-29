@@ -13,7 +13,7 @@ import Image
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_saved', help='Continue from saved checkpoint')
-parser.add_argument('--recontruct', help='Try to reconstruct song')
+parser.add_argument('--reconstruct', help='Try to reconstruct song')
 args = parser.parse_args()
 
 xs = []
@@ -140,7 +140,8 @@ if args.reconstruct:
     initial = tf.random_normal(shape) * 0.256
     image = tf.Variable(initial)
 
-    conv = tf.nn.conv2d(image, W_conv1, strides=(1, 1, 1, 1),
+    image_reshaped = tf.reshape(image, [-1, height, width, 1])
+    conv = tf.nn.conv2d(image_reshaped, W_conv1, strides=(1, 1, 1, 1),
             padding='SAME')
     conv2 = tf.nn.bias_add(conv, b_conv1)
     image_features = tf.nn.relu(conv2)
@@ -148,17 +149,15 @@ if args.reconstruct:
             image_features - content_features) /
             content_features.size)
     train_step2 = tf.train.AdamOptimizer(.001).minimize(content_loss)
-    sess.run(image.initializer)
+    sess.run(tf.initialize_all_variables())
+    saver.restore(sess, 'model.ckpt')
     for i in range(2000):
-      last_step = (i == iterations - 1)
+      last_step = (i == 1999)
 
       if i % 100 == 0 or last_step:
         print('loss at step %s: %s' % (str(i), str(content_loss.eval())))
       train_step2.run()
 
-      if i % 500 == 0 or last_step:
-        im = Image.fromarray(image.eval()[0])
-        im.save('generated%s.png' % str(i))
 else:
   with tf.Session() as sess:
     if args.use_saved:
